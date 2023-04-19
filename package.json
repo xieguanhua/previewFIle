@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "swiper": "^9.2.0",
-    "vue-awesome-swiper": "^5.0.1"
+    "vue-awesome-swiper": "^5.0.1",
+    "vue3-photo-preview": "^0.3.0"
   }
 }

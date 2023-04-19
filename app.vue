@@ -1,21 +1,41 @@
 <template>
-  <div class="main">
-    <div class="item" v-for="(item,i) in list" :key="item" @click="preview(item)">
-      <div class="item-image">
-        <img :src="`${item.file}`" alt="">
-      </div>
-      <div class="item-name" :title="item">{{ item.name }}</div>
-    </div>
 
+  <client-only>
+
+  <photo-provider>
+    <photo-consumer v-for="item in previewList" :key="item.file" :src="item.file">
+      <div class="item">
+        <div class="item-image">
+          <img src="@/assets/image/image.png" alt="">
+        </div>
+        <div class="item-name" :title="item">{{ item.name }}</div>
+      </div>
+    </photo-consumer>
+  </photo-provider>
+  <div class="item" v-for="(item,i) in directoryList" :key="item" @click="preview(item)">
+    <div class="item-image">
+      <img :src="`${item.file}`" alt="">
+    </div>
+    <div class="item-name" :title="item">{{ item.name }}</div>
   </div>
-  <div class="mask" v-if="show">
-    <div class="close" @click="close">关闭</div>
-    <swiper class="swiper" ref="mySwiper" :modules="modules" navigation @swiper="onSwiper">
-      <swiper-slide class="slide" v-for="(item,i) in previewList" :key="i">
-        <div class="slide-image"><img :src="`${item.file}`" alt=""/></div>
-      </swiper-slide>
-    </swiper>
-  </div>
+  </client-only>
+<!--  <div class="main">-->
+<!--    <div class="item" v-for="(item,i) in list" :key="item" @click="preview(item)">-->
+<!--      <div class="item-image">-->
+<!--        <img :src="`${item.file}`" alt="">-->
+<!--      </div>-->
+<!--      <div class="item-name" :title="item">{{ item.name }}</div>-->
+<!--    </div>-->
+
+<!--  </div>-->
+<!--  <div class="mask" v-if="show">-->
+<!--    <div class="close" @click="close">关闭</div>-->
+<!--    <swiper class="swiper" ref="mySwiper" :modules="modules" navigation @swiper="onSwiper">-->
+<!--      <swiper-slide class="slide" v-for="(item,i) in previewList" :key="i">-->
+<!--        <div class="slide-image"><img :src="`${item.file}`" alt=""/></div>-->
+<!--      </swiper-slide>-->
+<!--    </swiper>-->
+<!--  </div>-->
 </template>
 <script setup>
 import {Navigation} from 'swiper'
@@ -79,6 +99,9 @@ const list = computed(()=>{
 const previewList = computed(()=>{
   return list.value.filter(v=>v.type==='file')
 })
+const directoryList =  computed(()=>{
+  return list.value.filter(v=>v.type==='directory')
+})
 
 const show = ref(false)
 const mySwiper = ref()
@@ -109,15 +132,19 @@ function close() {
 }
 </script>
 <style>
+*{
+  margin: 0;
+}
 .main {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px;
 }
 
 .item {
+  display: inline-block;
   width: 100px;
   cursor: pointer;
+  margin-right: 20px;
 }
 
 .item-name {
@@ -173,5 +200,8 @@ img {
   cursor: pointer;
   z-index: 10;
   color: #fff;
+}
+.PhotoView__PhotoWrap .PhotoView__PhotoBox{
+  height: 100%;
 }
 </style>
