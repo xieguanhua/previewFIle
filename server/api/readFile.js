@@ -1,21 +1,9 @@
 // const fs = require('fs');
-// const path = require('path');
-
-// fs.readdir(directoryPath, function(err, files) {
-//     if (err) {
-//         return console.log('Unable to scan directory: ' + err);
-//     }
-//
-//     files.forEach(function(file) {
-//         const extname = path.extname(file);
-//         if (extname === '.jpg' || extname === '.jpeg' || extname === '.png' || extname === '.gif') {
-//             console.log(file);
-//             // 在这里可以对文件进行操作，例如读取文件内容或者复制文件到其他目录
-//         }
-//     });
-// });
 import fs from 'fs'
 import path from 'path'
+
+const regex = /\.(jpg|jpeg|png|gif)$/i
+const filePath = 'D:/previewFIle/public/'
 
 function deep(dir, list) {
     const arr = fs.readdirSync(path.join(dir))
@@ -23,20 +11,27 @@ function deep(dir, list) {
         const child = []
         const itemPath = path.join(dir, item)
         const isDir = fs.statSync(itemPath).isDirectory()
-        list.push({name: item, child, isDir})
+        //图片或者文件夹
+        if (isDir || regex.test(item)) {
+
+            list.push({name: item, child, isDir,path:dir.replace(/\\/g, '/').replace(filePath, ''), file: itemPath.replace(/\\/g, '/').replace(filePath, '')})
+        }
         isDir && deep(itemPath, child)
     })
 }
+
 export default defineEventHandler(async (event) => {
     try {
-        const {path} = getQuery(event)
+        // const {path} = getQuery(event)
+        const path = filePath
         const list = []
         deep(path, list)
         return list
     } catch (e) {
+        console.log(e)
         return {
             code: 500,
-            msg:'文件读取失败'
+            msg: '文件读取失败'
         }
     }
 })

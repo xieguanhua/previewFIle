@@ -1,140 +1,71 @@
 <template>
 
   <client-only>
-
-  <photo-provider>
-    <photo-consumer v-for="item in previewList" :key="item.file" :src="item.file">
-      <div class="item">
-        <div class="item-image">
-          <img src="@/assets/image/image.png" alt="">
+    <photo-provider>
+      <photo-consumer v-for="item in previewList" :key="item.file" :src="item.file">
+        <div class="item">
+          <div class="item-image">
+            <img src="@/assets/image/image.png" alt="">
+          </div>
+          <div class="item-name" :title="item">{{ item.name }}</div>
         </div>
-        <div class="item-name" :title="item">{{ item.name }}</div>
+      </photo-consumer>
+    </photo-provider>
+    <div class="item" v-for="(item,i) in directoryList" :key="item" @click="preview(item)">
+      <div class="item-image">
+        <img src="@/assets/image/directory.png" alt="">
       </div>
-    </photo-consumer>
-  </photo-provider>
-  <div class="item" v-for="(item,i) in directoryList" :key="item" @click="preview(item)">
-    <div class="item-image">
-      <img :src="`${item.file}`" alt="">
+      <div class="item-name" :title="item">{{ item.name }}</div>
     </div>
-    <div class="item-name" :title="item">{{ item.name }}</div>
-  </div>
   </client-only>
-<!--  <div class="main">-->
-<!--    <div class="item" v-for="(item,i) in list" :key="item" @click="preview(item)">-->
-<!--      <div class="item-image">-->
-<!--        <img :src="`${item.file}`" alt="">-->
-<!--      </div>-->
-<!--      <div class="item-name" :title="item">{{ item.name }}</div>-->
-<!--    </div>-->
-
-<!--  </div>-->
-<!--  <div class="mask" v-if="show">-->
-<!--    <div class="close" @click="close">关闭</div>-->
-<!--    <swiper class="swiper" ref="mySwiper" :modules="modules" navigation @swiper="onSwiper">-->
-<!--      <swiper-slide class="slide" v-for="(item,i) in previewList" :key="i">-->
-<!--        <div class="slide-image"><img :src="`${item.file}`" alt=""/></div>-->
-<!--      </swiper-slide>-->
-<!--    </swiper>-->
-<!--  </div>-->
 </template>
 <script setup>
-import {Navigation} from 'swiper'
-import {Swiper, SwiperSlide} from 'swiper/vue'
-import 'swiper/css'
-import 'swiper/css/navigation'
-import directoryFile from '@/assets/image/directory.png'
+
+const {data: fileTree} = await useFetch(`/api/readFile`)
 
 const router = useRouter()
 const route = useRoute()
-const modules = ref([Navigation])
-
-const imagesContext = import.meta.glob('@/public/**/*.{jpg,jpeg,png,gif}', {eager: true})
-
-const fileList = Object.keys(imagesContext).map(v => v.replace('/public/', ''))
-
-function buildFileTree(fileList) {
-  const tree = [];
-  for (const file of fileList) {
-    const parts = file.split('/');
-    let currentNode = tree;
-    for (let i = 0; i < parts.length; i++) {
-      const isDirectory = i < parts.length - 1;
-      const name = parts[i];
-      let node = currentNode.find(node => node.name === name && node.type === (isDirectory ? 'directory' : 'file'));
-      if (!node) {
-        node = {
-          path:parts.slice(0,parts.length-1).join('/'),
-          name,
-          file: isDirectory ? directoryFile : file,
-          type: isDirectory ? 'directory' : 'file',
-          children: []
-        };
-        currentNode.push(node);
-      }
-      currentNode = node.children || node;
-    }
-  }
-  return tree;
-}
-
-const fileTree = buildFileTree(fileList);
 function flattern(array) {
-  return [].concat(array.map(item => [].concat(item, ...flattern(item.children))))
+  return [].concat(array.map(item => [].concat(item, ...flattern(item.child))))
 }
-const list = computed(()=>{
-  if(route.query.path){
-    const flattenedArray = flattern(fileTree).flat()
+const list = computed(() => {
+  if (route.query.path) {
+    const flattenedArray = flattern(fileTree.value).flat()
     return flattenedArray.filter(v=>{
-
-      if(v.path === route.query.path && v.type === 'directory'){
+      if(v.file === route.query.path && v.isDir){
         return false
       }
-      return v.path===route.query.path || v.path.indexOf(route.query.path)===0 && v.type=== 'directory'
+      return v.path===route.query.path || v.file.indexOf(route.query.path)===0 && v.isDir
     })
   }
-  return fileTree
+  return fileTree.value
 })
 
-
-const previewList = computed(()=>{
-  return list.value.filter(v=>v.type==='file')
+const previewList = computed(() => {
+  return list.value.filter(v => !v.isDir)
 })
-const directoryList =  computed(()=>{
-  return list.value.filter(v=>v.type==='directory')
+const directoryList = computed(() => {
+  return list.value.filter(v => v.isDir)
 })
 
-const show = ref(false)
-const mySwiper = ref()
-
-const swiperInstance = ref()
-
-function onSwiper(swiper) {
-  swiperInstance.value = swiper
-}
 
 async function preview(item) {
-  if (item.type === 'file') {
-    const index = previewList.value.findIndex(v=>v.file === item.file)
-    show.value = true
-    await nextTick()
-    swiperInstance.value?.slideTo(index)
-  } else {
-    router.push({
-      query:{
-        path:item.path
-      }
-    })
-  }
+  router.push({
+    query: {
+      path: item.file
+    }
+  })
 }
 
-function close() {
-  show.value = false
-}
+// function close() {
+//   show.value = false
+// }
 </script>
 <style>
-*{
+* {
   margin: 0;
 }
+
 .main {
   display: flex;
   flex-wrap: wrap;
@@ -201,7 +132,8 @@ img {
   z-index: 10;
   color: #fff;
 }
-.PhotoView__PhotoWrap .PhotoView__PhotoBox{
+
+.PhotoView__PhotoWrap .PhotoView__PhotoBox {
   height: 100%;
 }
 </style>
