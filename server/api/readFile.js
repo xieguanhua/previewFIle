@@ -3,7 +3,7 @@ import fs from 'fs'
 import path from 'path'
 
 const regex = /\.(jpg|jpeg|png|gif)$/i
-const filePath = 'D:/previewFIle/public/'
+const filePath = 'public/'
 
 function deep(dir, list) {
     const arr = fs.readdirSync(path.join(dir))
